@@ -1,42 +1,44 @@
 # DriftDNS
 
-Rust CLI for keeping DNS `A` and `AAAA` records when the detected public IP changes.
+Lightweight dynamic DNS updater with a built-in web dashboard. Keeps your `A` and `AAAA` records in sync with your current public IP.
 
-## Behavior
+## Features
 
-1. Detect the current public IP with one or more IP detectors.
-2. Compare it with the last recorded IP in the history file.
-3. Update matching DNS records through the configured DNS backend.
-4. Advance the history file only after all records for that IP type are updated successfully.
+- Detects public IPv4 and IPv6 using multiple fallback providers
+- Updates Cloudflare DNS only when your IP actually changes *(additional DNS backends may be added on request)*
+- Maintains a local IP history log
+- Auto-reloads config on file changes
+- Built-in dashboard and JSON status endpoint
 
-## IP Detectors
+## How It Works
 
-- `ipify` (`A`, `AAAA`)
-- `icanhazip` (`A`, `AAAA`)
-- `ip.sb` (`A`, `AAAA`)
-- `cloudflare_dns` (`A` only)
+1. Detects your current public IP for each configured record type.
+2. Compares it against the last known IP in the history file.
+3. If changed, updates all matching DNS records of that type.
+4. History only advances after all updates for that type succeed.
 
-`cloudflare_dns` performs a direct DNS UDP query and does not execute `dig`.
+History is tracked **per record type**: all `A` records share one IPv4 history, all `AAAA` records share one IPv6 history.
 
-Equivalent command:
+## Supported Providers
 
-```bash
-dig -4 TXT CH +short whoami.cloudflare @one.one.one.one
-```
+### IP Detectors
 
-## DNS Backends
+- `ipify` — IPv4 & IPv6
+- `icanhazip` — IPv4 & IPv6
+- `ip.sb` — IPv4 & IPv6
+- `cloudflare_dns` — IPv4 only
 
-- `cloudflare`
+### DNS Backends
+
+- `cloudflare` **(additional backends may be added on request)**
 
 ## Configuration
 
-Create a local config:
+Start from the example file:
 
 ```bash
 cp ddns.example.yaml ddns.yaml
 ```
-
-Example:
 
 ```yaml
 history_file: ddns-history.txt
@@ -60,67 +62,63 @@ records:
     backend:
       provider: cloudflare
       api_token_env: CLOUDFLARE_API_TOKEN
-      zone_id: your_cloudflare_zone_id
+      # api_token: your_token
+      zone_id: your_zone_id
+      ttl: 1
+      proxied: false
+
+  - name: example.com
+    type: AAAA
+    backend:
+      provider: cloudflare
+      api_token_env: CLOUDFLARE_API_TOKEN
+      # api_token: your_token
+      zone_id: your_zone_id
       ttl: 1
       proxied: false
 ```
 
-`ip_detector.*.provider` accepts a comma-separated detector list. Detectors are tried in random order; failed detectors are skipped until all candidates fail.
+### Key Options
 
-IP detector endpoints are fixed in code. Custom URLs, DNS servers, query names, and timeouts are not supported in the config file.
+| Option | Description |
+|--------|-------------|
+| `history_file` | Path to local IP history file |
+| `dry_run` | Simulate without making changes |
+| `check_interval` | Check frequency (`30s`, `5m`, `1h`, `1d`) |
+| `history_limit` | Max history entries per record type |
+| `web.enabled` | Toggle built-in dashboard |
+| `web.bind` | Dashboard listen address (e.g. `0.0.0.0:8080`) |
 
-`records[].backend` selects the DNS backend for each record.
+### IP Detector
 
-`history_limit` controls how many historical IP entries are retained for each record type.
+Provider lists are comma-separated and tried in **random order** — if one fails, the next is used until one succeeds or all fail. Names are normalized (`ip.sb`, `ip-sb`, `ip_sb` all accepted).
 
-`check_interval` is optional. Supported units are `s`, `m`, `h`, and `d`, for example `30s`, `5m`, `1h`, `1d`.
+### DNS Backend
 
-When `check_interval` is set:
+#### Cloudflare
 
-- The first update runs immediately.
-- Updates continue at the configured interval.
-- The config file is watched by modified time and reloaded when changed.
-- Update or reload errors are logged and the process keeps running.
+API token can be set directly via `api_token`, or by referencing an environment variable with `api_token_env`. If both are set, `api_token` takes precedence.
 
-When `check_interval` is not set, the program runs once and exits.
+## Running
 
-When `web.enabled` is true, DriftDNS serves a dashboard at the configured `bind` address. The process stays alive even if `check_interval` is not set. The dashboard is available at `/`; the raw state is available at `/api/state`.
-
-## Cloudflare
-
-Use an API token with DNS edit access for the target zone:
-
-```bash
-export CLOUDFLARE_API_TOKEN=your_token
-```
-
-The token can also be set per record with `api_token`, or loaded from a custom environment variable with `api_token_env`.
-
-## Run
+### Local
 
 ```bash
 cargo run -- --config ddns.yaml
 ```
 
-Dry run:
+### Docker
 
 ```bash
-cargo run -- --config ddns.yaml --dry-run
-```
+# Build
+docker build -t driftdns .
 
-## Logging
+# Or pull from GHCR
+docker pull ghcr.io/creling/driftdns:sha-a10d75d
 
-Logs are written to stderr:
-
-```text
-1780076387.623 level=INFO target=main update_started dry_run=true
-```
-
-## History File
-
-The history file is plain text:
-
-```text
-A|1710000000|203.0.113.10
-AAAA|1710000300|2001:db8::10
+# Run
+docker run \
+  -v "<host path>/ddns.yaml:/config/ddns.yaml:ro" \
+  -v "<host path>/data:/data" \
+  driftdns
 ```
