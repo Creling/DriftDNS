@@ -1,0 +1,5 @@
+/target
+ddns*.yaml
+!ddns.example.yaml
+ddns-history.txt
+*.tmp
