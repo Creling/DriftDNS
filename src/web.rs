@@ -83,7 +83,7 @@ async fn load_state(config_path: PathBuf) -> Result<DashboardState> {
         .collect();
 
     Ok(DashboardState {
-    check_interval: config.check_interval.map(format_duration),
+        check_interval: config.check_interval.map(format_duration),
         history_limit: config.history_limit,
         records,
     })
@@ -119,7 +119,7 @@ fn http_response(status: &str, content_type: &str, body: impl AsRef<str>) -> Str
 
 #[derive(Debug, Serialize)]
 struct DashboardState {
-  check_interval: Option<String>,
+    check_interval: Option<String>,
     history_limit: usize,
     records: Vec<RecordState>,
 }
@@ -135,13 +135,17 @@ struct RecordState {
     history: Vec<HistoryEntry>,
 }
 
-fn dashboard_html() -> &'static str {
-    r#"<!doctype html>
+fn dashboard_html() -> String {
+    concat!(
+        r#"<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DriftDNS</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,"#,
+        include_str!(concat!(env!("OUT_DIR"), "/favicon.b64")),
+        r#"">
   <style>
     :root {
       color-scheme: light;
@@ -176,6 +180,19 @@ fn dashboard_html() -> &'static str {
       align-items: center;
       justify-content: space-between;
       gap: 16px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .brand-logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex: 0 0 auto;
     }
     h1 {
       margin: 0;
@@ -324,7 +341,12 @@ fn dashboard_html() -> &'static str {
 <body>
   <header>
     <div class="wrap topbar">
-      <h1>DriftDNS</h1>
+      <div class="brand">
+        <img class="brand-logo" src="data:image/png;base64,"#,
+        include_str!(concat!(env!("OUT_DIR"), "/brand-logo.b64")),
+        r#"" alt="" width="50" height="50">
+        <h1>DriftDNS</h1>
+      </div>
       <div class="status"><span class="dot"></span><span id="updated">Loading</span></div>
     </div>
   </header>
@@ -424,32 +446,34 @@ fn dashboard_html() -> &'static str {
 </body>
 </html>
 "#
+    )
+    .to_string()
 }
 
 fn format_duration(duration: Duration) -> String {
-  let seconds = duration.as_secs();
-  if seconds == 0 {
-    return "0s".to_string();
-  }
+    let seconds = duration.as_secs();
+    if seconds == 0 {
+        return "0s".to_string();
+    }
 
-  let days = seconds / 86_400;
-  let hours = (seconds % 86_400) / 3_600;
-  let minutes = (seconds % 3_600) / 60;
-  let seconds = seconds % 60;
+    let days = seconds / 86_400;
+    let hours = (seconds % 86_400) / 3_600;
+    let minutes = (seconds % 3_600) / 60;
+    let seconds = seconds % 60;
 
-  let mut parts = Vec::new();
-  if days > 0 {
-    parts.push(format!("{days}d"));
-  }
-  if hours > 0 {
-    parts.push(format!("{hours}h"));
-  }
-  if minutes > 0 {
-    parts.push(format!("{minutes}m"));
-  }
-  if seconds > 0 || parts.is_empty() {
-    parts.push(format!("{seconds}s"));
-  }
+    let mut parts = Vec::new();
+    if days > 0 {
+        parts.push(format!("{days}d"));
+    }
+    if hours > 0 {
+        parts.push(format!("{hours}h"));
+    }
+    if minutes > 0 {
+        parts.push(format!("{minutes}m"));
+    }
+    if seconds > 0 || parts.is_empty() {
+        parts.push(format!("{seconds}s"));
+    }
 
-  parts.join(" ")
+    parts.join(" ")
 }

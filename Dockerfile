@@ -5,6 +5,7 @@ RUN apk add --no-cache build-base musl-dev pkgconfig ca-certificates
 WORKDIR /src
 
 COPY Cargo.toml Cargo.lock ./
+COPY build.rs favicon-192x192.png logo-512x512.png ./
 COPY src ./src
 
 RUN cargo build --release --locked --target x86_64-unknown-linux-musl
