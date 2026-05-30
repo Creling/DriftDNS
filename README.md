@@ -2,6 +2,8 @@
 
 Lightweight dynamic DNS updater with a built-in web dashboard. Keeps your `A` and `AAAA` records in sync with your current public IP.
 
+<img width="2468" height="1352" alt="image" src="https://github.com/user-attachments/assets/fce9cebb-ea9e-40f4-b52e-4eb050086358" />
+
 ## Features
 
 - Detects public IPv4 and IPv6 using multiple fallback providers
