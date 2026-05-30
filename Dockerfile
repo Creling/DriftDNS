@@ -16,6 +16,8 @@ RUN apt update && apt install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
+EXPOSE 8080/tcp
+
 COPY --from=builder /src/target/release/driftdns /usr/local/bin/driftdns
 
 ENTRYPOINT ["/usr/local/bin/driftdns"]
