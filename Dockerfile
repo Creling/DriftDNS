@@ -19,4 +19,4 @@ ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /src/target/release/driftdns /usr/local/bin/driftdns
 
 ENTRYPOINT ["/usr/local/bin/driftdns"]
-CMD ["--config", "/config/ddns.yaml"]
+CMD ["--config", "/data/ddns.yaml"]

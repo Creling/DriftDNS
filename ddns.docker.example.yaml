@@ -1,0 +1,32 @@
+history_file: /data/ddns-history.txt
+dry_run: false
+check_interval: 1m
+history_limit: 10
+
+web:
+  enabled: true
+  bind: 0.0.0.0:8080
+
+ip_detector:
+  ipv4:
+    provider: cloudflare_dns, ipify, ip.sb
+  ipv6:
+    provider: icanhazip, ip.sb, ipify
+
+records:
+  - name: example.com
+    type: A
+    backend:
+      provider: cloudflare
+      api_token_env: CLOUDFLARE_API_TOKEN
+      zone_id: your_cloudflare_zone_id
+      ttl: 1
+      proxied: false
+  - name: example.com
+    type: AAAA
+    backend:
+      provider: cloudflare
+      api_token_env: CLOUDFLARE_API_TOKEN
+      zone_id: your_cloudflare_zone_id
+      ttl: 1
+      proxied: false

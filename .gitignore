@@ -1,5 +1,6 @@
 /target
 ddns*.yaml
 !ddns.example.yaml
+!ddns.docker.example.yaml
 ddns-history.txt
 *.tmp
