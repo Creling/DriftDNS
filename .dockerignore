@@ -1,0 +1,6 @@
+target
+.git
+.gitignore
+ddns.yaml
+ddns-history.txt
+README.md
