@@ -1,6 +1,6 @@
 FROM rust:1.86.0 AS builder
 
-RUN apk add --no-cache build-base musl-dev pkgconfig ca-certificates
+RUN apt update && apt install -y build-essential musl-dev pkg-config ca-certificates
 
 WORKDIR /src
 
